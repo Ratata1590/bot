@@ -74,9 +74,7 @@ public class ServerBot extends Thread {
           return;
         }
         command = EntityUtils.toString(response.getEntity());
-        Thread.sleep(1000);
       }
-
       sock = openSocket(command);
       SEND send = new SEND();
       send.startSend(proxyUrl.concat("/mirror"), sock, sockRestId);
