@@ -1,5 +1,6 @@
 package com.bot;
 
+import java.io.File;
 import java.io.IOException;
 
 import com.bot.Thread.ServerBot;
@@ -13,16 +14,20 @@ public class Launcher {
     Launcher.proxyUrl = args[1];
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        try {
-          Runtime.getRuntime()
-              .exec("java -jar "
-                  + Launcher.class.getProtectionDomain().getCodeSource().getLocation().getPath()
-                  + " " + botName + " " + proxyUrl);
-        } catch (IOException e2) {
-          e2.printStackTrace();
-        }
+        Launcher.restart();
       }
     });
-    (new ServerBot()).startServer(args[1], args[0]);
+    (new ServerBot()).startServer(args[1], args[0], null);
+  }
+
+  public static void restart() {
+    try {
+      Runtime.getRuntime().exec("java -jar "
+          + new File(Launcher.class.getProtectionDomain().getCodeSource().getLocation().getPath())
+              .getName()
+          + " " + botName + " " + proxyUrl);
+    } catch (IOException e2) {
+      e2.printStackTrace();
+    }
   }
 }

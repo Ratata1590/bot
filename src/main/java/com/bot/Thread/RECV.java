@@ -15,14 +15,19 @@ public class RECV extends LinkAbstract {
         HttpResponse response;
         int ctry = retry;
         do {
+          Thread.sleep(1000);
           response = client.execute(get);
           ctry--;
           if (ctry == 0) {
             throw new Exception("out of retry");
           }
         } while (response.getStatusLine().getStatusCode() != 200);
-        response.getEntity().writeTo(sock.getOutputStream());
-        sock.getOutputStream().flush();
+        if (response.getEntity().getContent().available() != 0) {
+          response.getEntity().writeTo(sock.getOutputStream());
+          sock.getOutputStream().flush();
+        } else {
+          Thread.sleep(1000);
+        }
       } catch (Exception e) {
         disconnectRemoteSocket();
         break;

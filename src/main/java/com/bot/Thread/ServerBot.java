@@ -13,7 +13,11 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
+import com.bot.Launcher;
+
 public class ServerBot extends Thread {
+
+  private String sockRestIdBackUp;
   private String proxyUrl;
   private String botName;
 
@@ -21,19 +25,28 @@ public class ServerBot extends Thread {
     try {
       botInit(botName);
     } catch (Exception e1) {
-      e1.printStackTrace();
+      Launcher.restart();
       return;
     }
     while (!Thread.currentThread().isInterrupted()) {
       try {
-        String sockRestId = botAddConnection(botName);
+        String sockRestId = null;
+        if (sockRestIdBackUp != null) {
+          sockRestId = sockRestIdBackUp;
+        } else {
+          sockRestId = botAddConnection(botName);
+        }
         connectToDestination(sockRestId);
       } catch (Exception e) {
+        return;
       }
     }
+    Launcher.restart();
   }
 
-  public void startServer(String proxyUrl, String botName) throws Exception {
+  public void startServer(String proxyUrl, String botName, String sockRestIdBackUp)
+      throws Exception {
+    this.sockRestIdBackUp = sockRestIdBackUp;
     this.proxyUrl = proxyUrl;
     this.botName = botName;
     start();
@@ -45,6 +58,7 @@ public class ServerBot extends Thread {
     post.addHeader("botName", this.botName);
     HttpResponse response;
     do {
+      Thread.sleep(1000);
       response = client.execute(post);
     } while (response.getStatusLine().getStatusCode() != 200);
   }
@@ -55,6 +69,7 @@ public class ServerBot extends Thread {
     post.addHeader("botName", this.botName);
     HttpResponse response;
     do {
+      Thread.sleep(1000);
       response = client.execute(post);
     } while (response.getStatusLine().getStatusCode() != 200);
     return EntityUtils.toString(response.getEntity());
@@ -69,12 +84,16 @@ public class ServerBot extends Thread {
       String command = "";
       HttpResponse response = null;
       while (command.equals("")) {
+        Thread.sleep(1000);
         response = client.execute(get);
         if (response.getStatusLine().getStatusCode() != 200) {
+          sockRestIdBackUp = null;
           return;
         }
+        sockRestIdBackUp = sockRestId;
         command = EntityUtils.toString(response.getEntity());
       }
+      sockRestIdBackUp = null;
       sock = openSocket(command);
       SEND send = new SEND();
       send.startSend(proxyUrl.concat("/mirror"), sock, sockRestId);
