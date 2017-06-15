@@ -1,25 +1,28 @@
 package com.bot;
 
-import java.io.File;
+import java.io.IOException;
 
 import com.bot.Thread.ServerBot;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Launcher {
+  private static String proxyUrl;
+  private static String botName;
 
-	public static void main(String[] args) throws Exception {
-		ObjectMapper mapper = new ObjectMapper();
-		for (String config : args) {
-			JsonNode configNode = mapper.readTree(new File(config));
-			int poolSize = 2;
-			if (configNode.has("poolSize")) {
-				poolSize = configNode.get("poolSize").asInt();
-			}
-			for (int i = 0; i < poolSize; i++) {
-				ServerBot server = new ServerBot();
-				server.startServer(configNode.get("proxyUrl").asText(), configNode.get("botName").asText());
-			}
-		}
-	}
+  public static void main(String[] args) throws Exception {
+    Launcher.botName = args[0];
+    Launcher.proxyUrl = args[1];
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      public void run() {
+        try {
+          Runtime.getRuntime()
+              .exec("java -jar "
+                  + Launcher.class.getProtectionDomain().getCodeSource().getLocation().getPath()
+                  + " " + botName + " " + proxyUrl);
+        } catch (IOException e2) {
+          e2.printStackTrace();
+        }
+      }
+    });
+    (new ServerBot()).startServer(args[1], args[0]);
+  }
 }
