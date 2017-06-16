@@ -20,7 +20,6 @@ public class SEND extends LinkAbstract {
         tmpbuff = new byte[sock.getInputStream().read(resultBuff, 0, resultBuff.length)];
         System.arraycopy(resultBuff, 0, tmpbuff, 0, tmpbuff.length);
         post.setEntity(new ByteArrayEntity(tmpbuff));
-        System.out.println("send:"+tmpbuff);
         HttpResponse response = client.execute(post);
         if (response.getStatusLine().getStatusCode() != 200) {
           throw new Exception("status not 200");

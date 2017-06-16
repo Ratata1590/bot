@@ -57,7 +57,6 @@ public class ServerBot extends Thread {
     post.addHeader("botName", this.botName);
     HttpResponse response;
     while (!Thread.currentThread().isInterrupted()) {
-      System.out.println("botInit");
       response = client.execute(post);
       post.releaseConnection();
       if (response.getStatusLine().getStatusCode() == 200) {
@@ -73,7 +72,6 @@ public class ServerBot extends Thread {
     post.addHeader("botName", this.botName);
     HttpResponse response = null;
     while (!Thread.currentThread().isInterrupted()) {
-      System.out.println("botAddConnection");
       response = client.execute(post);
       if (response.getStatusLine().getStatusCode() == 200) {
         break;
@@ -85,7 +83,6 @@ public class ServerBot extends Thread {
     post.releaseConnection();
     client.close();
     sockRestIdBackUp = result;
-    System.out.println("botAddConnection:" + result);
     return result;
   }
 
@@ -97,7 +94,6 @@ public class ServerBot extends Thread {
     try {
       String command = "";
       while (!Thread.currentThread().isInterrupted()) {
-        System.out.println("connectToDestination:" + sockRestId);
         HttpResponse response = client.execute(get);
         command = EntityUtils.toString(response.getEntity());
         if (response.getStatusLine().getStatusCode() != 200) {
@@ -113,7 +109,6 @@ public class ServerBot extends Thread {
         sockRestIdBackUp = sockRestId;
         Thread.sleep(LinkAbstract.delay);
       }
-      System.out.println("connectToDestination:" + sockRestId + ":command:" + command);
       sock = openSocket(command);
       String[] info = command.split(":");
       SEND send = new SEND();
@@ -136,7 +131,6 @@ public class ServerBot extends Thread {
       HttpResponse response;
       int ctry = 5;
       do {
-        System.out.println("disconnectRemoteSocket" + sockRestId);
         post.setHeader("sessionId", sockRestId);
         response = client.execute(post);
         ctry--;

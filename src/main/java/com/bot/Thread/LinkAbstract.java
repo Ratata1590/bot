@@ -26,7 +26,6 @@ public abstract class LinkAbstract extends Thread {
     CloseableHttpClient client = HttpClientBuilder.create().build();
     HttpPost post = new HttpPost(proxyUrl.concat("/socketControl/disconnect"));
     post.setHeader("sessionId", sessionId);
-    System.out.println("disconnectRemoteSocket recv send");
     try {
       client.execute(post);
       post.releaseConnection();
