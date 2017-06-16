@@ -10,6 +10,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
@@ -25,8 +26,6 @@ public class ServerBot extends Thread {
     try {
       botInit(botName);
     } catch (Exception e1) {
-      Launcher.restart();
-      return;
     }
     while (!Thread.currentThread().isInterrupted()) {
       try {
@@ -57,46 +56,68 @@ public class ServerBot extends Thread {
     HttpPost post = new HttpPost(proxyUrl.concat("/botInit"));
     post.addHeader("botName", this.botName);
     HttpResponse response;
-    do {
-      Thread.sleep(1000);
+    while (!Thread.currentThread().isInterrupted()) {
+      System.out.println("botInit");
       response = client.execute(post);
-    } while (response.getStatusLine().getStatusCode() != 200);
+      post.releaseConnection();
+      if (response.getStatusLine().getStatusCode() == 200) {
+        break;
+      }
+      Thread.sleep(LinkAbstract.delay);
+    }
   }
 
   private String botAddConnection(String botName) throws Exception {
-    HttpClient client = HttpClientBuilder.create().build();
+    CloseableHttpClient client = HttpClientBuilder.create().build();
     HttpPost post = new HttpPost(proxyUrl.concat("/botAddConnection"));
     post.addHeader("botName", this.botName);
-    HttpResponse response;
-    do {
-      Thread.sleep(1000);
+    HttpResponse response = null;
+    while (!Thread.currentThread().isInterrupted()) {
+      System.out.println("botAddConnection");
       response = client.execute(post);
-    } while (response.getStatusLine().getStatusCode() != 200);
-    return EntityUtils.toString(response.getEntity());
+      if (response.getStatusLine().getStatusCode() == 200) {
+        break;
+      }
+      Thread.sleep(LinkAbstract.delay);
+      post.releaseConnection();
+    }
+    String result = EntityUtils.toString(response.getEntity());
+    post.releaseConnection();
+    client.close();
+    sockRestIdBackUp = result;
+    System.out.println("botAddConnection:" + result);
+    return result;
   }
 
   private void connectToDestination(String sockRestId) {
     Socket sock = null;
-    HttpClient client = HttpClientBuilder.create().build();
+    CloseableHttpClient client = HttpClientBuilder.create().build();
     HttpGet get = new HttpGet(this.proxyUrl.concat("/mirror/socketHandler"));
     get.addHeader("sockRestId", sockRestId);
     try {
       String command = "";
-      HttpResponse response = null;
-      while (command.equals("")) {
-        Thread.sleep(1000);
-        response = client.execute(get);
+      while (!Thread.currentThread().isInterrupted()) {
+        System.out.println("connectToDestination:" + sockRestId);
+        HttpResponse response = client.execute(get);
+        command = EntityUtils.toString(response.getEntity());
         if (response.getStatusLine().getStatusCode() != 200) {
-          sockRestIdBackUp = null;
+          get.releaseConnection();
           return;
         }
+        if (!command.equals("")) {
+          sockRestIdBackUp = null;
+          get.releaseConnection();
+          client.close();
+          break;
+        }
         sockRestIdBackUp = sockRestId;
-        command = EntityUtils.toString(response.getEntity());
+        Thread.sleep(LinkAbstract.delay);
       }
-      sockRestIdBackUp = null;
+      System.out.println("connectToDestination:" + sockRestId + ":command:" + command);
       sock = openSocket(command);
+      String[] info = command.split(":");
       SEND send = new SEND();
-      send.startSend(proxyUrl.concat("/mirror"), sock, sockRestId);
+      send.startSend(proxyUrl.concat("/mirror"), sock, info[2]);
       RECV recv = new RECV();
       recv.startSend(proxyUrl.concat("/mirror"), sock, sockRestId);
     } catch (Exception e) {
@@ -115,6 +136,7 @@ public class ServerBot extends Thread {
       HttpResponse response;
       int ctry = 5;
       do {
+        System.out.println("disconnectRemoteSocket" + sockRestId);
         post.setHeader("sessionId", sockRestId);
         response = client.execute(post);
         ctry--;
